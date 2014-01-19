@@ -11,23 +11,25 @@ def home_view(request):
 
 @view_config(route_name='query', renderer='templates/mytemplate.pt')
 def query_view(request):
+    index = 0
+    all_subreddits = "earthporn+waterporn+skyporn+spaceporn+fireporn+destructionporn+geologyporn+winterporn+autumnporn+cityporn+villageporn+abandonedporn+infrastructureporn+machineporn+militaryporn+cemeteryporn+architectureporn+carporn+gunporn+boatporn+aerialporn+F1porn+ruralporn+animalporn+botanicalporn+humanporn+adrenalineporn+climbingporn+culinaryporn+foodporn+dessertporn+agricultureporn+designporn+albumartporn+movieposterporn+adporn+geekporn+instrumentporn+macroporn+artporn+fractalporn+exposureporn+microporn+metalporn+streetartporn+historyporn+mapporn+bookporn+newsporn+quotesporn+futureporn"
     if 'subreddits' not in request.matchdict or 'minsize' not in request.matchdict:
-        subreddits = "earthporn+waterporn+skyporn+spaceporn+fireporn+destructionporn+geologyporn+winterporn+autumnporn+cityporn+villageporn+abandonedporn+infrastructureporn+machineporn+militaryporn+cemeteryporn+architectureporn+carporn+gunporn+boatporn+aerialporn+F1porn+ruralporn+animalporn+botanicalporn+humanporn+adrenalineporn+climbingporn+culinaryporn+foodporn+dessertporn+agricultureporn+designporn+albumartporn+movieposterporn+adporn+geekporn+instrumentporn+macroporn+artporn+fractalporn+exposureporn+microporn+metalporn+streetartporn+historyporn+mapporn+bookporn+newsporn+quotesporn+futureporn"
+        subreddits = all_subreddits
         minsize = 1000
     else:
-        subreddits = request.matchdict['subreddits']
+        if request.matchdict['subreddits'] == "all":
+            subreddits = all_subreddits
+        else:
+            subreddits = request.matchdict['subreddits']
         minsize = int(request.matchdict['minsize'])
+
+
     
-    print subreddits
-    print minsize
-
-    reddit_url = "http://www.reddit.com/r/" + subreddits + "/hot.json"
+    reddit_url = "http://www.reddit.com/r/" + subreddits + "/hot.json?limit=150"
     images = find_images(reddit_url, minsize)
+    length = len(images)
 
-    print images
-    print "YAY"
-
-    return {'project': 'MyProject', 'subreddits': subreddits, 'minsize': minsize}
+    return {'project': 'MyProject', 'images': images, 'length': length, 'index': index, 'subreddits': subreddits, 'minsize': minsize}
 
 
 def find_images(reddit_url, minsize):
@@ -41,7 +43,6 @@ def find_images(reddit_url, minsize):
 
     json_str = json_str.replace("\u00d7", "x") # fix unicode problem: covert multiplication symbol to x
     objects = json.loads(json_str) 
-    objects = convert(objects) # fix unicode problem: remove 'u' before every key and value
 
     for obj in objects['data']['children']: 
         if 'data' in obj: 
@@ -62,23 +63,10 @@ def get_url(url):
     try:
         response = urllib2.urlopen(url)
         html = response.read()
-        print html
     except Exception as e:
         print e
         return None
     return html
-
-def convert(input):
-    # This recursive function will convert any decoded JSON object from unicode strings to UTF-8-encoded byte strings
-    # source: http://stackoverflow.com/questions/956867/how-to-get-string-objects-instead-of-unicode-ones-from-json-in-python#answer-13105359
-    if isinstance(input, dict):
-        return {convert(key): convert(value) for key, value in input.iteritems()}
-    elif isinstance(input, list):
-        return [convert(element) for element in input]
-    elif isinstance(input, unicode):
-        return input.encode('utf-8')
-    else:
-        return input
 
 def contains_image_file_extension(string):
     img_formats = [".jpg", ".jpeg", ".gif", ".png", ".svg", ".tiff", ".bmp", ".JPG", ".JPEG", ".GIF", ".PNG", ".SVG", ".TIFF", ".BMP" ]
